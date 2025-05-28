@@ -10,30 +10,34 @@ app.use(express.json());
 app.post('/download', async (req, res) => {
     const { url } = req.body;
     try {
-        let apiUrl, apiHost;
+        let apiUrl, apiHost, params;
         if (url.includes('instagram.com')) {
-            apiUrl = 'https://instagram-reels-downloader-api.p.rapidapi.com/download?url=https%3A%2F%2Fwww.instagram.com%2Freel%2FDJg8Hc_zkot%2F%3Figsh%3DMXFvaDhueHozZjQ2bQ%3D%3D'; // Replace with real endpoint
-            apiHost = 'x-rapidapi-host: instagram-reels-downloader-api.p.rapidapi.com';
+            apiUrl = 'https://instagram-reels-downloader-api.p.rapidapi.com/download';
+            apiHost = 'instagram-reels-downloader-api.p.rapidapi.com';
+            params = { url };
         } else if (url.includes('x.com') || url.includes('twitter.com')) {
-            apiUrl = 'https://twitter241.p.rapidapi.com/tweet?pid=1631781099415257088'; // Replace with real endpoint
-            apiHost = 'x-rapidapi-host: twitter241.p.rapidapi.com';
+            apiUrl = 'https://twitter241.p.rapidapi.com/tweet';
+            apiHost = 'twitter241.p.rapidapi.com';
+            params = { url }; // Adjust according to the API docs if needed
         } else {
             return res.status(400).json({ error: 'Unsupported URL' });
         }
 
         const response = await axios.get(apiUrl, {
-            params: { url },
+            params,
             headers: {
-                'https://twitter241.p.rapidapi.com/tweet?pid=1631781099415257088': process.env.RAPIDAPI_KEY,
-                'x-rapidapi-host: twitter241.p.rapidapi.com': apiHost
+                'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
+                'X-RapidAPI-Host': apiHost
             }
         });
 
-        if (!response.data || !response.data.videoUrl) {
+        // Adjust this according to the actual API response structure
+        const videoUrl = response.data.video || response.data.videoUrl || response.data.result?.video;
+        if (!videoUrl) {
             return res.status(404).json({ error: 'Video not found or API did not return a video URL.' });
         }
 
-        res.json({ videoUrl: response.data.videoUrl });
+        res.json({ videoUrl });
     } catch (error) {
         if (error.response) {
             res.status(error.response.status).json({ error: error.response.data || 'API error' });
